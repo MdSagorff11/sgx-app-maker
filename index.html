@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<title>SGX App Maker — AI App Builder</title>
+<style>
+:root{
+  --bg:#070b14;--panel:#0e1526;--panel2:#111b30;--card:#131f35;
+  --text:#eef4ff;--muted:#93a4bf;--line:#24324d;--accent:#7c5cff;
+  --accent2:#19d3ff;--good:#34d399;--danger:#fb7185;--warn:#fbbf24;
+  --shadow:0 20px 60px rgba(0,0,0,.35);--radius:20px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:radial-gradient(circle at 10% 0%,#18244a 0,#070b14 36%),var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.app{min-height:100vh}
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(7,11,20,.82);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.07)}
+.brand{display:flex;align-items:center;gap:9px;font-weight:900;white-space:nowrap}
+.logo{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 10px 30px rgba(124,92,255,.28)}
+.brand small{display:block;color:var(--muted);font-weight:600;font-size:10px;margin-top:1px}
+.actions{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:9px 12px;border-radius:12px;font-weight:750;transition:.18s}
+.btn:hover{transform:translateY(-1px);border-color:#405273}
+.btn.primary{border:0;background:linear-gradient(135deg,var(--accent),#5d7cff);box-shadow:0 8px 25px rgba(124,92,255,.22)}
+.btn.good{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.3)}
+.btn.danger{background:rgba(251,113,133,.1);border-color:rgba(251,113,133,.25)}
+.iconbtn{width:40px;height:40px;padding:0;display:grid;place-items:center}
+.layout{display:grid;grid-template-columns:minmax(320px,1fr) minmax(360px,1fr);gap:12px;padding:12px;max-width:1700px;margin:auto}
+.panel{background:rgba(14,21,38,.82);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;min-width:0}
+.panelhead{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.panelhead h2{font-size:14px;margin:0}
+.panelhead .grow{margin-left:auto}
+.project{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.field{width:100%;background:#0a1120;border:1px solid var(--line);color:var(--text);outline:0;border-radius:12px;padding:10px 12px}
+.field:focus{border-color:var(--accent)}
+.editorwrap{display:grid;grid-template-columns:42px 1fr;min-height:65vh}
+.gutter{padding:14px 8px;text-align:right;color:#52637f;background:#09101d;border-right:1px solid var(--line);font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;overflow:hidden;user-select:none}
+#code{width:100%;min-height:65vh;resize:none;border:0;outline:0;padding:14px;background:#0a1120;color:#dbe8ff;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;tab-size:2}
+.status{display:flex;gap:12px;align-items:center;padding:8px 12px;color:var(--muted);font-size:11px;border-top:1px solid var(--line)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--good);display:inline-block}
+.previewpanel{display:flex;flex-direction:column;min-height:calc(100vh - 88px)}
+.previewtools{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.device{display:flex;background:#09101d;border:1px solid var(--line);border-radius:10px;padding:3px}
+.device button{border:0;background:transparent;color:var(--muted);padding:6px 8px;border-radius:7px}
+.device button.active{background:#202d49;color:#fff}
+.previewarea{flex:1;display:grid;place-items:center;padding:12px;background:radial-gradient(circle at center,#17233e 0,#09101b 55%,#070b14 100%);overflow:auto}
+#frame{border:1px solid #34445f;background:white;box-shadow:0 25px 70px rgba(0,0,0,.45);transition:.2s;width:100%;height:100%;min-height:70vh;border-radius:10px}
+#frame.mobile{width:390px;height:760px;min-height:0;max-width:100%;max-height:78vh}
+#frame.tablet{width:700px;height:900px;min-height:0;max-width:100%;max-height:78vh}
+#frame.desktop{width:100%;height:78vh;min-height:0}
+.mobiletabs{display:none}
+.modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.65);backdrop-filter:blur(10px)}
+.modal.show{display:flex}
+.dialog{width:min(900px,100%);max-height:92vh;overflow:auto;background:#0d1526;border:1px solid #2b3a57;border-radius:24px;box-shadow:0 30px 100px rgba(0,0,0,.6)}
+.dialoghead{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:16px;background:rgba(13,21,38,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.dialoghead h3{margin:0;font-size:17px}.dialoghead .grow{margin-left:auto}
+.dialogbody{padding:16px}
+.hero{padding:20px;border-radius:20px;background:linear-gradient(135deg,rgba(124,92,255,.2),rgba(25,211,255,.08));border:1px solid rgba(255,255,255,.08);margin-bottom:16px}
+.hero h1{margin:0 0 6px;font-size:24px}.hero p{margin:0;color:var(--muted);line-height:1.5}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 16px}
+.chip{padding:9px 12px;border:1px solid var(--line);background:#121d31;color:#aebdd3;border-radius:999px;font-weight:700}
+.chip:hover{border-color:var(--accent);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.gamecard{padding:14px;border-radius:17px;border:1px solid var(--line);background:linear-gradient(145deg,#121d31,#0c1424);transition:.18s}
+.gamecard:hover{transform:translateY(-2px);border-color:#43557a}
+.gameicon{font-size:28px}.gamecard strong{display:block;margin:7px 0 4px}.gamecard small{color:var(--muted);display:block;min-height:34px}
+.gamecard .row{display:flex;gap:7px;margin-top:10px}
+.notice{padding:12px;border-radius:14px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);color:#f8d77c;font-size:12px;line-height:1.5}
+.errorbox{display:none;margin:10px 12px;padding:10px 12px;border-radius:12px;background:rgba(251,113,133,.08);border:1px solid rgba(251,113,133,.25);color:#fecdd3;font:12px/1.5 ui-monospace,monospace;white-space:pre-wrap}
+.errorbox.show{display:block}
+.progress{height:7px;background:#0a1120;border-radius:999px;overflow:hidden;margin:12px 0}.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:.3s}
+.kbd{padding:2px 6px;border:1px solid var(--line);border-radius:6px;color:#aebdd3;font-size:10px}
+.toast{position:fixed;z-index:300;left:50%;bottom:20px;transform:translate(-50%,20px);opacity:0;pointer-events:none;padding:11px 15px;border-radius:13px;background:#111c31;border:1px solid #344764;box-shadow:var(--shadow);transition:.25s;font-weight:700;font-size:13px}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.empty{padding:24px;text-align:center;color:var(--muted)}
+@media(max-width:900px){
+  .layout{display:block;padding:8px}.panel{display:none}.panel.active{display:flex}.editorpanel{min-height:calc(100vh - 150px)}.previewpanel{min-height:calc(100vh - 150px)}
+  .mobiletabs{display:flex;position:sticky;top:63px;z-index:25;margin:8px;background:#0d1526;border:1px solid var(--line);border-radius:14px;padding:4px}
+  .mobiletabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:9px;border-radius:10px;font-weight:800}
+  .mobiletabs button.active{background:#1a2742;color:#fff}
+  .grid{grid-template-columns:repeat(2,1fr)}.topbar{flex-wrap:wrap}.actions{width:100%;justify-content:space-between;margin-left:0}
+  .actions .btn{flex:1}.editorwrap{min-height:65vh}#code{min-height:65vh}
+}
+@media(max-width:500px){
+  .brand span{font-size:13px}.grid{grid-template-columns:1fr 1fr}.gamecard{padding:11px}.dialog{border-radius:18px}.dialogbody{padding:12px}
+}
+</style>
+
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0b1020">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SGX Maker">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">⚡</div>
+      <div><span>SGX App Maker</span><small>Build • Preview • AI • Export</small></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="gamesBtn">🎮 Games</button>
+      <button class="btn" id="aiBtn">🤖 AI Generator</button>
+      <button class="btn" id="importBtn">📂 Import</button>
+      <button class="btn" id="exportBtn">📦 Export</button>
+      <button class="btn" id="themeBtn">☀️ Theme</button>
+      <button class="btn primary" id="saveBtn">⬇ Save HTML</button>
+    </div>
+  </header>
+
+  <div class="mobiletabs">
+    <button class="active" data-tab="editor">🧩 Editor</button>
+    <button data-tab="preview">👁 Preview</button>
+  </div>
+
+  <main class="layout">
+    <section class="panel editorpanel active" id="editorPanel">
+      <div class="panelhead">
+        <h2>🧩 HTML Editor</h2><span class="grow"></span>
+        <button class="btn iconbtn" title="Undo" id="undoBtn">↶</button>
+        <button class="btn iconbtn" title="Redo" id="redoBtn">↷</button>
+        <button class="btn" id="formatBtn">✨ Format</button>
+        <button class="btn" id="copyBtn">📋 Copy</button>
+        <button class="btn danger" id="clearBtn">🗑 Clear</button>
+      </div>
+      <div class="project">
+        <input id="projectName" class="field" value="SGX App" placeholder="Project name">
+        <button class="btn good" id="runBtn">▶ Run</button>
+      </div>
+      <div class="editorwrap">
+        <div class="gutter" id="gutter">1</div>
+        <textarea id="code" spellcheck="false"></textarea>
+      </div>
+      <div class="status">
+        <span><i class="dot"></i> <span id="statusText">Ready</span></span>
+        <span id="lines">Lines: 0</span>
+        <span id="size">0 KB</span>
+        <span class="grow"></span>
+        <label><input type="checkbox" id="autoRun" checked> Auto preview</label>
+      </div>
+      <div class="errorbox" id="errorBox"></div>
+    </section>
+
+    <section class="panel previewpanel" id="previewPanel">
+      <div class="panelhead">
+        <h2>👁 Live Preview</h2><span class="grow"></span>
+        <div class="device">
+          <button data-device="mobile" class="active">📱</button>
+          <button data-device="tablet">▣</button>
+          <button data-device="desktop">🖥</button>
+        </div>
+        <button class="btn iconbtn" id="refreshBtn" title="Refresh preview">↻</button>
+        <button class="btn" id="fullscreenBtn">⛶</button>
+      </div>
+      <div class="previewarea"><iframe id="frame" class="mobile" sandbox="allow-scripts allow-forms allow-modals allow-pointer-lock allow-popups"></iframe></div>
+    </section>
+  </main>
+</div>
+
+<!-- Games -->
+<div class="modal" id="gamesModal">
+  <div class="dialog">
+    <div class="dialoghead"><h3>🎮 Game Library</h3><span class="grow"></span><button class="btn iconbtn" data-close="gamesModal">✕</button></div>
+    <div class="dialogbody">
+      <div class="hero"><h1>Ready-made games</h1><p>Pick a game and it will be loaded into the editor. You can then customize the HTML, CSS and JavaScript.</p></div>
+      <input id="gameSearch" class="field" placeholder="🔎 Search games...">
+      <div class="chips" id="gameFilters"></div>
+      <div class="grid" id="gameGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AI -->
+<div class="modal" id="aiModal">
+  <div class="dialog">
+    <div class="dialoghead"><h3>🤖 AI App Generator</h3><span class="grow"></span><button class="btn iconbtn" data-close="aiModal">✕</button></div>
+    <div class="dialogbody">
+      <div class="hero"><h1>Build with AI ✨</h1><p>Describe the app you want and Gemini will generate a complete self-contained HTML application.</p></div>
+      <label><b>Quick ideas</b></label>
+      <div class="chips" id="quickIdeas">
+        <button class="chip">Calculator</button><button class="chip">To-Do</button><button class="chip">Notes</button>
+        <button class="chip">Clock</button><button class="chip">Weather</button><button class="chip">Quiz</button>
+        <button class="chip">Expense</button><button class="chip">Game</button>
+      </div>
+      <label><b>Describe your app</b></label>
+      <textarea id="aiPrompt" class="field" rows="7" style="margin-top:8px" placeholder="Build a beautiful mobile-first app..."></textarea>
+      <div style="height:12px"></div>
+      <label><b>Gemini API Key</b></label>
+      <input id="apiKey" class="field" type="password" autocomplete="off" placeholder="Paste your Gemini API key">
+      <p style="color:var(--muted);font-size:12px;line-height:1.5">
+        For testing only. A browser-side API key can be exposed to users if this HTML is published publicly.
+        Get your key from Google AI Studio.
+      </p>
+      <div class="notice">Model: <b>gemini-3.8-flash</b> • Uses the current Gemini generateContent API format.</div>
+      <div class="progress"><i id="aiProgress"></i></div>
+      <button class="btn primary" id="generateBtn" style="width:100%;padding:13px">✨ Generate App</button>
+      <p id="aiStatus" style="color:var(--muted);font-size:12px"></p>
+    </div>
+  </div>
+</div>
+
+<!-- APK / Export -->
+<div class="modal" id="exportModal">
+  <div class="dialog">
+    <div class="dialoghead"><h3>📦 Export Project</h3><span class="grow"></span><button class="btn iconbtn" data-close="exportModal">✕</button></div>
+    <div class="dialogbody">
+      <div class="hero"><h1>Project package</h1><p>Your project is a self-contained HTML app. Save the HTML or export a JSON project backup.</p></div>
+      <div style="display:grid;gap:10px">
+        <button class="btn primary" id="downloadFromModal">⬇ Download HTML</button>
+        <button class="btn" id="jsonFromModal">🧾 Export Project JSON</button>
+        <button class="btn" id="copyFromModal">📋 Copy HTML</button>
+      </div>
+      <div style="height:12px"></div>
+      <div class="notice">A browser-only HTML editor cannot directly compile a native Android APK. The exported HTML is ready to use as a web app/PWA source or with a suitable wrapper/build service.</div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".html,.htm,.txt" hidden>
+<div class="toast" id="toast"></div>
+
+<!-- Game templates -->
+<template id="game-snake"><!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#07111d;color:#fff;font-family:system-ui;text-align:center}h1{margin:18px 0 8px}canvas{width:min(92vw,420px);height:min(92vw,420px);background:#0c1b2b;border:2px solid #29415e;border-radius:16px}button{margin:8px;padding:11px 16px;border:0;border-radius:10px;background:#6d5dfc;color:#fff;font-weight:800}</style></head><body><h1>🐍 Snake</h1><div>Score: <b id=s>0</b></div><canvas id=c width=400 height=400></canvas><br><button onclick="start()">Restart</button><script>const c=document.getElementById('c'),x=c.getContext('2d'),N=20,z=20;let a=[[10,10]],d=[1,0],f=[15,15],score=0,t;function start(){a=[[10,10]];d=[1,0];score=0;place();clearInterval(t);t=setInterval(loop,110)}function place(){do{f=[Math.floor(Math.random()*N),Math.floor(Math.random()*N)]}while(a.some(p=>p[0]==f[0]&&p[1]==f[1]))}function loop(){let h=[a[0][0]+d[0],a[0][1]+d[1]];if(h[0]<0||h[1]<0||h[0]>=N||h[1]>=N||a.some(p=>p[0]==h[0]&&p[1]==h[1]))return start();a.unshift(h);if(h[0]==f[0]&&h[1]==f[1]){score++;document.getElementById('s').textContent=score;place()}else a.pop();x.clearRect(0,0,400,400);x.fillStyle='#20d99a';a.forEach(p=>x.fillRect(p[0]*z,p[1]*z,z-1,z-1));x.fillStyle='#ff5d73';x.fillRect(f[0]*z,f[1]*z,z-1,z-1)}onkeydown=e=>{let k=e.key.toLowerCase(),q={arrowup:[0,-1],arrowdown:[0,1],arrowleft:[-1,0],arrowright:[1,0]}[k];if(q&&q[0]!=-d[0]||q&&q[1]!=-d[1])d=q};start()</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+  });
+}
+</script>
+
+</body></html></template>
+
+<template id="game-2048"><!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#f4efe6;font-family:system-ui;text-align:center;color:#51483e}h1{margin:18px}.board{width:min(92vw,420px);margin:auto;background:#9e9489;padding:8px;border-radius:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.cell{aspect-ratio:1;background:#cfc5b8;border-radius:8px;display:grid;place-items:center;font-size:clamp(20px,8vw,38px);font-weight:900}.cell.on{background:#f5b97a;color:#fff}button{padding:10px 15px;border:0;border-radius:9px;background:#776e65;color:#fff;font-weight:800}</style></head><body><h1>2048</h1><div>Score: <b id=sc>0</b></div><div class=board id=b></div><button onclick=newGame()>New Game</button><script>let a,sc;const b=document.getElementById('b');function newGame(){a=Array(16).fill(0);sc=0;add();add();draw()}function add(){let e=a.map((v,i)=>v?null:i).filter(i=>i!==null);if(e.length)a[e[Math.floor(Math.random()*e.length)]]=Math.random()<.9?2:4}function draw(){b.innerHTML=a.map(v=>`<div class="cell ${v?'on':''}">${v||''}</div>`).join('');document.getElementById('sc').textContent=sc}function move(dir){let rows=[];for(let r=0;r<4;r++){let q=a.slice(r*4,r*4+4);if(dir==='L'||dir==='R'){if(dir==='R')q.reverse();q=q.filter(Boolean);for(let i=0;i<q.length-1;i++)if(q[i]===q[i+1]){q[i]*=2;sc+=q[i];q.splice(i+1,1)}while(q.length<4)q.push(0);if(dir==='R')q.reverse()}rows.push(q)}if(dir==='U'||dir==='D'){let cols=[];for(let c=0;c<4;c++){let q=[0,1,2,3].map(r=>a[r*4+c]);if(dir==='D')q.reverse();q=q.filter(Boolean);for(let i=0;i<q.length-1;i++)if(q[i]===q[i+1]){q[i]*=2;sc+=q[i];q.splice(i+1,1)}while(q.length<4)q.push(0);if(dir==='D')q.reverse();cols.push(q)}for(let r=0;r<4;r++)for(let c=0;c<4;c++)rows[r][c]=cols[c][r]}a=rows.flat();add();draw()}onkeydown=e=>{let d={ArrowLeft:'L',ArrowRight:'R',ArrowUp:'U',ArrowDown:'D'}[e.key];if(d)move(d)};newGame()</script></body></html></template>
+
+<template id="game-tetris"><!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#080b15;color:#fff;text-align:center;font-family:system-ui}canvas{width:min(78vw,300px);height:auto;background:#10182b;border:2px solid #293957;border-radius:10px}button{padding:10px 14px;border:0;border-radius:9px;background:#715cff;color:white;font-weight:800}</style></head><body><h1>🧱 Tetris</h1><div>Score <b id=s>0</b></div><canvas id=c width=240 height=480></canvas><br><button onclick=start()>Restart</button><script>const c=document.getElementById('c'),x=c.getContext('2d'),W=10,H=20,Z=24,sh=[[1,1,1,1],[1,1,1],[0,1,0,1,1,1,1]],colors=['#59d7ff','#ffd166','#ff6b6b','#8ef08a'];let g,p,px,py,sc,t;function start(){g=Array.from({length:H},()=>Array(W).fill(0));p=shape();px=3;py=0;sc=0;clearInterval(t);t=setInterval(step,450);draw()}function shape(){let q=[[1,1,1,1],[1,1,1,0],[1,1,0,0,1,1,0,0],[1,1,1,0,0,1,0,0]][Math.floor(Math.random()*4)];if(q.length==4)return [[1,1,1,1]];if(q.length==3)return [[1,1,1]];return [[1,1],[1,1]]}function hit(){for(let y=0;y<p.length;y++)for(let xx=0;xx<p[y].length;xx++)if(p[y][xx]&&(g[py+y]?.[px+xx]!==0||px+xx<0||px+xx>=W||py+y>=H))return true;return false}function lock(){for(let y=0;y<p.length;y++)for(let xx=0;xx<p[y].length;xx++)if(p[y][xx])g[py+y][px+xx]=1;g=g.filter(r=>r.some(v=>!v));while(g.length<H)g.unshift(Array(W).fill(0));sc+=10;p=shape();px=3;py=0;if(hit())start()}function step(){py++;if(hit()){py--;lock()}draw()}function draw(){x.clearRect(0,0,c.width,c.height);for(let y=0;y<H;y++)for(let xx=0;xx<W;xx++)if(g[y][xx]){x.fillStyle=colors[(y+xx)%colors.length];x.fillRect(xx*Z,y*Z,Z-2,Z-2)}for(let y=0;y<p.length;y++)for(let xx=0;xx<p[y].length;xx++)if(p[y][xx]){x.fillStyle='#b99cff';x.fillRect((px+xx)*Z,(py+y)*Z,Z-2,Z-2)}document.getElementById('s').textContent=sc}onkeydown=e=>{if(e.key==='ArrowLeft')px--;if(e.key==='ArrowRight')px++;if(e.key==='ArrowDown')step();if(hit())px=e.key==='ArrowLeft'?px+1:px-1;draw()};start()</script></body></html></template>
+
+<template id="game-flappy"><!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#77c9ff;text-align:center;font-family:system-ui;color:#fff}canvas{width:min(94vw,420px);background:linear-gradient(#78d5ff,#d8f5ff);border:3px solid #fff;border-radius:14px;margin-top:10px}button{padding:11px 16px;border:0;border-radius:10px;background:#ff8b2d;color:#fff;font-weight:900}</style></head><body><h1>🐦 Flappy</h1><div>Score <b id=s>0</b></div><canvas id=c width=420 height=620></canvas><br><button onclick=reset()>Restart / Tap</button><script>const c=document.getElementById('c'),x=c.getContext('2d');let y,v,pipes,sc,run;function reset(){y=280;v=0;pipes=[];sc=0;run=true;for(let i=0;i<3;i++)pipes.push({x:480+i*180,g:170+Math.random()*180});}function loop(){if(run){v+=.45;y+=v;if(Math.random()<.018)pipes.push({x:430,g:150+Math.random()*240});pipes.forEach(p=>p.x-=2.6);pipes=pipes.filter(p=>p.x>-80);for(let p of pipes)if(75>p.x&&75<p.x+55&&(y<p.g-80||y>p.g+80))run=false;if(y<0||y>620)run=false;sc=Math.max(sc,pipes.filter(p=>p.x+55<75).length)}x.clearRect(0,0,420,620);x.fillStyle='#48b04b';pipes.forEach(p=>{x.fillRect(p.x,0,55,p.g-80);x.fillRect(p.x,p.g+80,55,620)});x.fillStyle='#ffd54a';x.beginPath();x.arc(75,y,17,0,7);x.fill();document.getElementById('s').textContent=sc;requestAnimationFrame(loop)}onkeydown=e=>{if(e.code==='Space'||e.key==='ArrowUp')v=-7};c.onclick=()=>v=-7;reset();loop()</script></body></html></template>
+
+<template id="game-breakout"><!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#08101e;color:#fff;text-align:center;font-family:system-ui}canvas{width:min(94vw,420px);background:#0e1b30;border:2px solid #304463;border-radius:12px}button{padding:10px 15px;border:0;border-radius:9px;background:#6d5dfc;color:#fff;font-weight:800}</style></head><body><h1>🧱 Breakout</h1><div>Score <b id=s>0</b></div><canvas id=c width=420 height=520></canvas><br><button onclick=start()>Restart</button><script>const c=document.getElementById('c'),x=c.getContext('2d');let px,bx,by,vx,vy,br,sc,t;function start(){px=175;bx=210;by=460;vx=3;vy=-3;br=30;sc=0;clearInterval(t);t=setInterval(loop,16)}function loop(){bx+=vx;by+=vy;if(bx<br||bx>420-br)vx=-vx;if(by<br)vy=-vy;if(by>500){start();return}if(by+br>480&&bx>px&&bx<px+70)vy=-Math.abs(vy);let hit=false;for(let i=0;i<7;i++)for(let j=0;j<5;j++){let rx=10+i*58,ry=20+j*28;if(by-br<ry+20&&by+br>ry&&bx>rx&&bx<rx+50){hit=true;sc+=10}}if(hit)vy=-vy;x.clearRect(0,0,420,520);x.fillStyle='#7c5cff';for(let i=0;i<7;i++)for(let j=0;j<5;j++)x.fillRect(10+i*58,20+j*28,50,20);x.fillStyle='#fff';x.beginPath();x.arc(bx,by,br/2,0,7);x.fill();x.fillStyle='#20d99a';x.fillRect(px,480,70,12);document.getElementById('s').textContent=sc}onmousemove=e=>px=Math.max(0,Math.min(350,e.offsetX-35));onkeydown=e=>{if(e.key==='ArrowLeft')px-=20;if(e.key==='ArrowRight')px+=20};start()</script></body></html></template>
+
+<template id="game-pong"><!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#050b14;color:#fff;text-align:center;font-family:system-ui}canvas{width:min(94vw,600px);background:#0b1727;border:2px solid #2d4160;border-radius:12px}button{padding:10px 15px;border:0;border-radius:9px;background:#22b8cf;color:#fff;font-weight:800}</style></head><body><h1>🏓 Pong</h1><div id=s>0 : 0</div><canvas id=c width=600 height=360></canvas><br><button onclick=start()>Restart</button><script>const c=document.getElementById('c'),x=c.getContext('2d');let py,cy,bx,by,vx,vy,A,B,t;function start(){py=150;cy=150;bx=300;by=180;vx=4;vy=3;A=B=0;clearInterval(t);t=setInterval(loop,16)}function loop(){by+=vy;bx+=vx;if(by<8||by>352)vy=-vy;cy=by-45;if(bx<30&&by>py&&by<py+60)vx=Math.abs(vx);if(bx>570&&by>cy&&by<cy+60)vx=-Math.abs(vx);if(bx<0){B++;reset()}if(bx>600){A++;reset()}x.clearRect(0,0,600,360);x.fillStyle='#fff';x.fillRect(15,py,12,60);x.fillRect(573,cy,12,60);x.beginPath();x.arc(bx,by,8,0,7);x.fill();document.getElementById('s').textContent=A+' : '+B}function reset(){bx=300;by=180;vx=-vx;vy=3}onkeydown=e=>{if(e.key==='ArrowUp')py-=20;if(e.key==='ArrowDown')py+=20};start()</script></body></html></template>
+
+<template id="game-memory"><!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#0b1020;color:#fff;text-align:center;font-family:system-ui}.grid{width:min(92vw,420px);margin:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.card{aspect-ratio:1;border-radius:12px;background:#172642;display:grid;place-items:center;font-size:30px;cursor:pointer}.open{background:#6d5dfc}.done{background:#1b8f68}</style></head><body><h1>🧠 Memory</h1><p>Moves: <b id=m>0</b></p><div class=grid id=g></div><script>const vals=['🍎','🚀','🐱','⚽','🌟','🎮','🍕','🎵'];let deck=[...vals,...vals].sort(()=>Math.random()-.5),open=[],moves=0;g.innerHTML=deck.map((_,i)=>`<div class=card data-i=${i}>?</div>`).join('');g.onclick=e=>{let c=e.target;if(!c.classList.contains('card')||open.length==2||c.classList.contains('done'))return;let i=+c.dataset.i;c.textContent=deck[i];c.classList.add('open');open.push(c);if(open.length==2){moves++;m.textContent=moves;if(open[0].textContent===open[1].textContent){open.forEach(q=>q.classList.add('done'));open=[]}else setTimeout(()=>{open.forEach(q=>{q.textContent='?';q.classList.remove('open')});open=[]},650)}};</script></body></html></template>
+
+<template id="game-ttt"><!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#09101b;color:#fff;text-align:center;font-family:system-ui}.grid{width:min(92vw,360px);margin:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.cell{aspect-ratio:1;background:#15243c;border-radius:14px;display:grid;place-items:center;font-size:50px;font-weight:900;cursor:pointer}button{margin:15px;padding:11px 16px;border:0;border-radius:10px;background:#7c5cff;color:#fff;font-weight:800}</style></head><body><h1>⭕ Tic-Tac-Toe</h1><p id=s>Turn: X</p><div class=grid id=g></div><button onclick=start()>Restart</button><script>let a,t,over;function start(){a=Array(9).fill('');t='X';over=false;g.innerHTML=a.map((_,i)=>`<div class=cell data-i=${i}></div>`).join('');s.textContent='Turn: X'}function win(){return [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]].some(q=>q.every(i=>a[i]===t))}g.onclick=e=>{let i=+e.target.dataset.i;if(over||a[i])return;a[i]=t;e.target.textContent=t;if(win()){s.textContent=t+' wins!';over=true}else if(a.every(Boolean)){s.textContent='Draw!';over=true}else{t=t==='X'?'O':'X';s.textContent='Turn: '+t}};start()</script></body></html></template>
+
+<template id="game-mines"><!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#10151f;color:#fff;text-align:center;font-family:system-ui}.grid{width:min(92vw,420px);display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin:auto}.c{aspect-ratio:1;background:#26344b;border:0;border-radius:5px;color:#fff;font-weight:900}.open{background:#172235}</style></head><body><h1>💣 Minesweeper</h1><p>Open all safe cells.</p><div class=grid id=g></div><script>const n=64,mines=new Set();while(mines.size<10)mines.add(Math.floor(Math.random()*n));let open=new Set();for(let i=0;i<n;i++){let b=document.createElement('button');b.className='c';b.dataset.i=i;b.textContent='';g.appendChild(b)}function count(i){let r=Math.floor(i/8),c=i%8,z=0;for(let y=-1;y<=1;y++)for(let x=-1;x<=1;x++){let j=(r+y)*8+c+x;if(y||x)if(j>=0&&j<n&&Math.abs(Math.floor(j/8)-r)<=1&&mines.has(j))z++}return z}g.onclick=e=>{if(!e.target.classList.contains('c')||open.has(+e.target.dataset.i))return;let i=+e.target.dataset.i;if(mines.has(i)){e.target.textContent='💥';alert('Boom! Refresh to play again.');return}open.add(i);e.target.classList.add('open');e.target.textContent=count(i)||''};</script></body></html></template>
+
+<template id="game-reaction"><!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#0a1020;color:#fff;text-align:center;font-family:system-ui}#box{height:55vh;margin:20px;border-radius:20px;display:grid;place-items:center;background:#24334c;font-size:28px;font-weight:900;user-select:none}</style></head><body><h1>⚡ Reaction Test</h1><p id=s>Wait for green, then tap.</p><div id=box>Tap to start</div><script>let t=0,ready=false,timer;box.onclick=()=>{if(!ready){box.style.background='#c33';box.textContent='Wait...';ready=false;clearTimeout(timer);timer=setTimeout(()=>{ready=true;t=performance.now();box.style.background='#18a66b';box.textContent='TAP NOW!'},900+Math.random()*2500)}else{s.textContent=Math.round(performance.now()-t)+' ms';box.style.background='#24334c';box.textContent='Tap to start';ready=false}}</script></body></html></template>
+
+<template id="game-guess"><!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#0b1020;color:#fff;font-family:system-ui;text-align:center}.box{max-width:420px;margin:50px auto;padding:22px}.field{width:100%;padding:13px;border-radius:12px;border:1px solid #34435e;background:#121d31;color:#fff;box-sizing:border-box}button{margin-top:10px;padding:12px 18px;border:0;border-radius:10px;background:#7c5cff;color:#fff;font-weight:800}</style></head><body><div class=box><h1>🔢 Number Guess</h1><p>Guess a number from 1–100.</p><input class=field id=i type=number><button onclick=guess()>Guess</button><h2 id=s></h2></div><script>let n=Math.floor(Math.random()*100)+1,c=0;function guess(){let v=+i.value;c++;s.textContent=v===n?'🎉 Correct in '+c+' tries!':v<n?'Too low ⬆️':'Too high ⬇️'}</script></body></html></template>
+
+<script>
+const KEY='sgx_appmaker_v3';
+const API_KEY='sgx_gemini_key_v3';
+const MODEL='gemini-3.8-flash';
+
+const $=s=>document.querySelector(s);
+const codeEl=$('#code'), frame=$('#frame'), gutter=$('#gutter'), toastEl=$('#toast');
+let history=[],future=[],renderTimer;
+
+const games=[
+ ['snake','🐍','Snake','Classic snake game','Arcade'],
+ ['2048','🔢','2048','Slide and combine numbers','Puzzle'],
+ ['tetris','🧱','Tetris','Block stacking game','Arcade'],
+ ['flappy','🐦','Flappy','Tap to fly through gaps','Arcade'],
+ ['breakout','🧱','Breakout','Break the blocks','Arcade'],
+ ['pong','🏓','Pong','Classic paddle game','Arcade'],
+ ['memory','🧠','Memory','Match the hidden cards','Puzzle'],
+ ['ttt','⭕','Tic-Tac-Toe','Two-player classic','Board'],
+ ['mines','💣','Minesweeper','Open safe cells','Puzzle'],
+ ['reaction','⚡','Reaction Test','Test your reaction speed','Casual'],
+ ['guess','🔢','Number Guess','Guess the secret number','Casual']
+];
+
+const sample=`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My SGX App</title>
+<style>
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#10172a,#182b4a);color:#fff;font-family:system-ui}
+.card{width:min(88vw,430px);padding:28px;border:1px solid #334866;border-radius:24px;background:rgba(255,255,255,.08);backdrop-filter:blur(16px);text-align:center;box-shadow:0 25px 70px #0005}
+button{padding:12px 18px;border:0;border-radius:12px;background:#7c5cff;color:white;font-weight:800}
+</style>
+</head>
+<body><div class="card"><h1>⚡ SGX App Maker</h1><p>Edit this HTML or use AI Generator / Games.</p><button onclick="alert('Hello from your app!')">Test App</button></div></body>
+</html>`;
+
+function toast(msg){
+  toastEl.textContent=msg;toastEl.classList.add('show');
+  clearTimeout(toast._t);toast._t=setTimeout(()=>toastEl.classList.remove('show'),2200);
+}
+function saveLocal(){
+  localStorage.setItem(KEY,JSON.stringify({code:codeEl.value,name:$('#projectName').value,auto:$('#autoRun').checked}));
+  localStorage.setItem(API_KEY,$('#apiKey').value||'');
+}
+function loadLocal(){
+  try{
+    const d=JSON.parse(localStorage.getItem(KEY)||'null');
+    codeEl.value=d?.code||sample;$('#projectName').value=d?.name||'SGX App';$('#autoRun').checked=d?.auto!==false;
+  }catch{codeEl.value=sample}
+  $('#apiKey').value=localStorage.getItem(API_KEY)||'';
+}
+function updateStats(){
+  const lines=codeEl.value.split('\n').length;
+  $('#lines').textContent='Lines: '+lines;
+  $('#size').textContent=(new Blob([codeEl.value]).size/1024).toFixed(1)+' KB';
+  gutter.innerHTML=Array.from({length:lines},(_,i)=>i+1).join('<br>');
+}
+function pushHistory(){
+  const v=codeEl.value;
+  if(history[history.length-1]!==v)history.push(v);
+  if(history.length>60)history.shift();
+  future=[];
+}
+function setCode(v,record=true){
+  if(record)pushHistory();
+  codeEl.value=v;updateStats();scheduleRun();saveLocal();
+}
+function undo(){
+  if(!history.length){toast('Nothing to undo');return}
+  future.push(codeEl.value);codeEl.value=history.pop();updateStats();scheduleRun();saveLocal();
+}
+function redo(){
+  if(!future.length){toast('Nothing to redo');return}
+  history.push(codeEl.value);codeEl.value=future.pop();updateStats();scheduleRun();saveLocal();
+}
+function buildHtml(v){
+  if(/<!doctype html/i.test(v)||/<html[\s>]/i.test(v))return v;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>${v}</body></html>`;
+}
+function injectBridge(html){
+  const bridge=`<script>
+window.addEventListener('error',function(e){parent.postMessage({type:'sgx-error',message:e.message||'Runtime error'},'*')});
+window.addEventListener('unhandledrejection',function(e){parent.postMessage({type:'sgx-error',message:String(e.reason||'Unhandled promise rejection')},'*')});
+<\/script>`;
+  if(/<\/head>/i.test(html))return html.replace(/<\/head>/i,bridge+'</head>');
+  return html.replace(/<body([^>]*)>/i,'<body$1>'+bridge);
+}
+function run(){
+  const html=injectBridge(buildHtml(codeEl.value));
+  frame.srcdoc=html;
+  $('#statusText').textContent='Preview updated';
+  $('#errorBox').classList.remove('show');
+  saveLocal();
+}
+function scheduleRun(){
+  if(!$('#autoRun').checked)return;
+  clearTimeout(renderTimer);renderTimer=setTimeout(run,420);
+}
+function download(filename,content,type='text/html'){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type}));
+  a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function projectFileName(){
+  return ($('#projectName').value.trim()||'sgx-app').replace(/[^\w\-]+/g,'-').toLowerCase()+'.html';
+}
+function copyText(text){
+  navigator.clipboard?.writeText(text).then(()=>toast('Copied!')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied!');
+  });
+}
+function simpleFormat(src){
+  let s=src.replace(/>\s*</g,'><').replace(/</g,'\n<').replace(/>/g,'>\n');
+  let depth=0,out=[];
+  for(const raw of s.split('\n')){
+    const line=raw.trim();if(!line)continue;
+    if(/^<\//.test(line))depth=Math.max(0,depth-1);
+    out.push('  '.repeat(depth)+line);
+    if(/^<([a-zA-Z][\w:-]*)(?:\s[^>]*)?>$/.test(line)&&!/^<\//.test(line)&&!/<\/[a-zA-Z]/.test(line)&&!/<(meta|link|img|input|br|hr|source|area|base|embed|param|track|wbr)\b/i.test(line))depth++;
+  }
+  return out.join('\n');
+}
+
+function openModal(id){$('#'+id).classList.add('show')}
+function closeModal(id){$('#'+id).classList.remove('show')}
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')}));
+
+function renderGames(){
+  const q=$('#gameSearch').value.toLowerCase().trim();
+  const active=document.querySelector('#gameFilters .chip.active')?.dataset.cat||'All';
+  const list=games.filter(g=>(active==='All'||g[4]===active)&&(!q||(g[2]+' '+g[3]).toLowerCase().includes(q)));
+  $('#gameGrid').innerHTML=list.map(g=>`<div class="gamecard"><div class="gameicon">${g[1]}</div><strong>${g[2]}</strong><small>${g[3]}</small><div class="row"><button class="btn primary" onclick="loadGame('${g[0]}')">Use</button><button class="btn" onclick="previewGame('${g[0]}')">Preview</button></div></div>`).join('')||'<div class="empty">No games found.</div>';
+}
+function loadGame(id){
+  const t=document.getElementById('game-'+id);
+  if(!t){toast('Game template not found');return}
+  pushHistory();codeEl.value=t.innerHTML.trim();$('#projectName').value=games.find(g=>g[0]===id)?.[2]||'SGX Game';
+  updateStats();saveLocal();run();closeModal('gamesModal');toast('Game loaded into editor');
+}
+function previewGame(id){
+  const t=document.getElementById('game-'+id);
+  if(!t)return;frame.srcdoc=t.innerHTML.trim();closeModal('gamesModal');toast('Game preview loaded');
+}
+window.loadGame=loadGame;window.previewGame=previewGame;
+
+function initGameFilters(){
+  const cats=['All',...new Set(games.map(g=>g[4]))];
+  $('#gameFilters').innerHTML=cats.map((c,i)=>`<button class="chip ${i===0?'active':''}" data-cat="${c}">${c}</button>`).join('');
+  $('#gameFilters').onclick=e=>{
+    if(!e.target.matches('.chip'))return;
+    document.querySelectorAll('#gameFilters .chip').forEach(x=>x.classList.remove('active'));
+    e.target.classList.add('active');renderGames();
+  };
+}
+
+async function generateAI(){
+  const key=$('#apiKey').value.trim(), prompt=$('#aiPrompt').value.trim();
+  if(!key){toast('Please enter your Gemini API key');return}
+  if(!prompt){toast('Describe the app first');return}
+  localStorage.setItem(API_KEY,key);
+  const btn=$('#generateBtn'),status=$('#aiStatus'),bar=$('#aiProgress');
+  btn.disabled=true;status.textContent='Generating your app...';bar.style.width='15%';
+  const system=`You are an expert front-end engineer. Generate ONE complete, self-contained HTML application for the user's request.
+Requirements:
+- Return ONLY raw HTML. No markdown fences and no explanations.
+- Include <!doctype html>, html, head, body.
+- Mobile-first responsive design.
+- Modern polished UI with accessible contrast.
+- Put all CSS and JavaScript inside the same HTML file.
+- No external libraries, CDN, fonts, images or network dependencies unless the user explicitly asks.
+- Make every button/control functional.
+- Use localStorage when persistent data makes sense.
+- Avoid unsafe browser APIs and do not ask for API keys unless the requested app genuinely needs one.
+- Make the result ready to paste into a single HTML file.`;
+  try{
+    bar.style.width='35%';
+    const endpoint='https://generativelanguage.googleapis.com/v1beta/models/'+MODEL+':generateContent?key='+encodeURIComponent(key);
+    const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      contents:[{role:'user',parts:[{text:system+'\\n\\nUSER REQUEST:\\n'+prompt}]}]
+    })});
+    bar.style.width='70%';
+    const data=await res.json();
+    if(!res.ok)throw new Error(data?.error?.message||('HTTP '+res.status));
+    let out=data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
+    out=out.replace(/^```(?:html)?\s*/i,'').replace(/\s*```$/,'').trim();
+    if(!out)throw new Error('The model returned empty output.');
+    pushHistory();codeEl.value=out;updateStats();run();
+    bar.style.width='100%';status.textContent='App generated successfully.';
+    toast('✨ AI app generated!');
+    setTimeout(()=>closeModal('aiModal'),650);
+  }catch(err){
+    bar.style.width='0';status.textContent='Generation failed: '+err.message;
+    toast('AI error: '+err.message);
+  }finally{btn.disabled=false}
+}
+
+$('#gamesBtn').onclick=()=>{renderGames();openModal('gamesModal')};
+$('#aiBtn').onclick=()=>openModal('aiModal');
+$('#exportBtn').onclick=()=>openModal('exportModal');
+$('#saveBtn').onclick=()=>{saveLocal();download(projectFileName(),buildHtml(codeEl.value));toast('HTML saved')};
+$('#downloadFromModal').onclick=()=>{$('#saveBtn').click();closeModal('exportModal')};
+$('#copyFromModal').onclick=()=>copyText(codeEl.value);
+$('#jsonFromModal').onclick=()=>{
+  const data={version:3,projectName:$('#projectName').value,html:codeEl.value,createdAt:new Date().toISOString()};
+  download((($('#projectName').value||'sgx-app').replace(/\W+/g,'-'))+'.sgx.json',JSON.stringify(data,null,2),'application/json');
+};
+$('#copyBtn').onclick=()=>copyText(codeEl.value);
+$('#runBtn').onclick=run;
+$('#refreshBtn').onclick=run;
+$('#undoBtn').onclick=undo;
+$('#redoBtn').onclick=redo;
+$('#clearBtn').onclick=()=>{if(confirm('Clear the editor?')){pushHistory();setCode('',false);run();toast('Editor cleared')}};
+$('#formatBtn').onclick=()=>{pushHistory();codeEl.value=simpleFormat(codeEl.value);updateStats();scheduleRun();toast('Formatted')};
+$('#fullscreenBtn').onclick=()=>document.documentElement.requestFullscreen?.();
+$('#themeBtn').onclick=()=>{
+  const light=document.body.dataset.theme==='light';
+  document.body.dataset.theme=light?'dark':'light';
+  if(!light){
+    document.documentElement.style.setProperty('--bg','#eef3fb');document.documentElement.style.setProperty('--panel','#fff');document.documentElement.style.setProperty('--panel2','#f5f8fd');document.documentElement.style.setProperty('--card','#fff');document.documentElement.style.setProperty('--text','#162033');document.documentElement.style.setProperty('--muted','#61708a');document.documentElement.style.setProperty('--line','#d9e1ee');
+    toast('Light theme');
+  }else location.reload();
+};
+$('#importBtn').onclick=()=>$('#fileInput').click();
+$('#fileInput').onchange=e=>{
+  const f=e.target.files?.[0];if(!f)return;
+  const r=new FileReader();r.onload=()=>{pushHistory();codeEl.value=r.result;$('#projectName').value=f.name.replace(/\.[^.]+$/,'');updateStats();run();toast('HTML imported')};r.readAsText(f);e.target.value='';
+};
+codeEl.addEventListener('input',()=>{updateStats();scheduleRun();saveLocal()});
+codeEl.addEventListener('scroll',()=>{gutter.scrollTop=codeEl.scrollTop});
+$('#autoRun').onchange=()=>{saveLocal();if($('#autoRun').checked)run()};
+$('#projectName').oninput=saveLocal;
+$('#gameSearch').oninput=renderGames;
+document.querySelectorAll('#quickIdeas .chip').forEach(b=>b.onclick=()=>{$('#aiPrompt').value='Build a polished mobile-first '+b.textContent+' app with a beautiful modern UI, smooth interactions, localStorage where useful, and all features working.'});
+$('#generateBtn').onclick=generateAI;
+window.addEventListener('message',e=>{
+  if(e.data?.type==='sgx-error'){
+    const box=$('#errorBox');box.textContent='Preview error: '+e.data.message;box.classList.add('show');
+  }
+});
+document.querySelectorAll('.device button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.device button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  frame.className=b.dataset.device;
+});
+document.querySelectorAll('.mobiletabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.mobiletabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  $('#'+(b.dataset.tab==='editor'?'editorPanel':'previewPanel')).classList.add('active');
+});
+document.addEventListener('keydown',e=>{
+  const mod=e.ctrlKey||e.metaKey;
+  if(mod&&e.key.toLowerCase()==='s'){e.preventDefault();$('#saveBtn').click()}
+  if(mod&&e.key==='Enter'){e.preventDefault();run()}
+  if(mod&&e.key.toLowerCase()==='z'){e.preventDefault();undo()}
+  if(mod&&e.key.toLowerCase()==='y'){e.preventDefault();redo()}
+});
+
+loadLocal();initGameFilters();updateStats();run();
+</script>
+</body>
+</html>
